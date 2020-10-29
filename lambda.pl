@@ -1,4 +1,4 @@
-x:- module(lambda, [
+:- module(lambda, [
     is_lam/1,
     lamstep/2,
     lamcall/2,
@@ -14,8 +14,8 @@ x:- module(lambda, [
     y_lam/1
 ]).
 
-:- op(100, fx, test).
 :- discontiguous test/1.
+:- op(950, fx, test).
 testing :-
     test X,
     \+ call(X),
@@ -69,23 +69,32 @@ replam(lam([A|As], B), To, lam(As, B2)) :-
 test replam(X, a, b, X).
 test replam(c, a, b, c).
 test replam(a-c, a, b, b-c).
+test replam(lam(a, a), a, b, lam(a, a)). % NOTE
+test \+ replam(lam(a, a), a, b, lam(a, b)). % NOTE
 test replam(lam([a], a), a, b, lam([a], a)). % NOTE
 test replam(lam([c], a), a, b, lam([c], b)).
 replam(A, _, _, A) :-
     var(A), !.
 replam(From, From, To, To) :-
     !.
-replam(A, _, _, A) :-
-    atomic(A), !.
 replam(A-B, From, To, A2-B2) :-
     !,
     replam(A, From, To, A2),
     replam(B, From, To, B2).
+replam(lam(From, B), From, _, lam(From, B)) :-
+    !.
+replam(lam(A, B), From, To, lam(A, B2)) :-
+    \+ is_list(A),
+    A \= From, !,
+    replam(B, From, To, B2).
 replam(lam(As, B), From, _, lam(As, B)) :-
     member(From, As), !.
 replam(lam(As, B), From, To, lam(As, B2)) :-
-    !,
+    is_list(As),
+    \+ member(From, As), !,
     replam(B, From, To, B2).
+replam(A, _, _, A).
+
 
 test n_lam(3, lam([f, x], f-(f-(f-x)))).
 n_lam(N, lam([f, x], T)) :-
